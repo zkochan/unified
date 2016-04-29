@@ -27,7 +27,8 @@ var extend = require('extend');
 
 var pipeline = ware()
     .use(function (ctx) {
-        ctx.tree = ctx.context.parse(ctx.file, ctx.settings);
+        return ctx.context.parse(ctx.file, ctx.settings)
+          .then(tree => { ctx.tree = tree });
     })
     .use(function (ctx, next) {
         ctx.context.run(ctx.tree, ctx.file, next);
@@ -176,11 +177,12 @@ function unified(options) {
     function parse(value, settings) {
         var file = new VFile(value);
         var CustomParser = (this && this.Parser) || Parser;
-        var node = new CustomParser(file, settings, instance(this)).parse();
+        var nodePromise = new CustomParser(file, settings, instance(this)).parse();
 
-        file.namespace(name).tree = node;
-
-        return node;
+        return nodePromise.then(node => {
+          file.namespace(name).tree = node
+          return node
+        });
     }
 
     /**
@@ -237,31 +239,25 @@ function unified(options) {
      * @return {string?} - Parsed document, when
      *   transformation was async.
      */
-    function process(value, settings, done) {
+    function process(value, settings) {
         var self = instance(this);
         var file = new VFile(value);
         var result = null;
 
-        if (typeof settings === 'function') {
-            done = settings;
-            settings = null;
-        }
+        return new Promise((resolve, reject) => {
+          pipeline.run({
+              'context': self,
+              'file': file,
+              'settings': settings || {}
+          }, function (err, res) {
+            if (err) return reject(err)
 
-        pipeline.run({
-            'context': self,
-            'file': file,
-            'settings': settings || {}
-        }, function (err, res) {
-            result = res && res.result;
-
-            if (done) {
-                done(err, file, result);
-            } else if (err) {
-                bail(err);
-            }
-        });
-
-        return result;
+            resolve({
+              file,
+              result: res && res.result
+            })
+          });
+        })
     }
 
     /*

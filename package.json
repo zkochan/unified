@@ -1,6 +1,6 @@
 {
-  "name": "unified",
-  "version": "3.0.0",
+  "name": "@zkochan/unified",
+  "version": "0.1.0",
   "description": "Text processing framework: Parse / Transform / Compile",
   "license": "MIT",
   "keywords": [
