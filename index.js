@@ -163,6 +163,12 @@ function unified(options) {
         return node;
     }
 
+    function createParser (value, settings) {
+      var file = new VFile(value);
+      var CustomParser = (this && this.Parser) || Parser;
+      return new CustomParser(file, settings, instance(this))
+    }
+
     /**
      * Parse a file.
      *
@@ -177,8 +183,7 @@ function unified(options) {
      */
     function parse(value, settings) {
         var file = new VFile(value);
-        var CustomParser = (this && this.Parser) || Parser;
-        var nodePromise = new CustomParser(file, settings, instance(this)).parse();
+        var nodePromise = this.createParser(file, settings).parse();
 
         return nodePromise.then(node => {
           file.namespace(name).tree = node
@@ -277,6 +282,7 @@ function unified(options) {
     Processor.stringify = proto.stringify = stringify;
     Processor.process = proto.process = process;
     Processor.data = proto.data = data || null;
+    Processor.createParser = proto.createParser = createParser
 
     return Processor;
 }
