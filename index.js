@@ -27,6 +27,7 @@ var extend = require('extend');
 
 var pipeline = ware()
     .use(function (ctx) {
+        if (ctx.tree) return;
         return ctx.context.parse(ctx.file, ctx.settings)
           .then(tree => { ctx.tree = tree });
     })
@@ -241,19 +242,23 @@ function unified(options) {
      */
     function process(value, settings) {
         var self = instance(this);
-        var file = new VFile(value);
+        var opts = {
+            'context': self,
+            'settings': settings || {}
+        }
+        if (typeof value === 'string' || value instanceof VFile) {
+          opts.file = new VFile(value);
+        } else {
+          opts.tree = value;
+        }
         var result = null;
 
         return new Promise((resolve, reject) => {
-          pipeline.run({
-              'context': self,
-              'file': file,
-              'settings': settings || {}
-          }, function (err, res) {
+          pipeline.run(opts, function (err, res) {
             if (err) return reject(err)
 
             resolve({
-              file,
+              file: opts.file,
               result: res && res.result
             })
           });
