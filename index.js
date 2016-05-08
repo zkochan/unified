@@ -52,7 +52,7 @@ var pipeline = ware()
  */
 function unified(options) {
     var name = options.name;
-    var Parser = options.Parser;
+    var parserFactory = options.parserFactory;
     var Compiler = options.Compiler;
     var data = options.data;
 
@@ -72,8 +72,10 @@ function unified(options) {
         self.ware = new AttachWare();
         self.ware.context = self;
 
-        self.Parser = unherit(Parser);
+        self.parserFactory = parserFactory;
         self.Compiler = unherit(Compiler);
+        self.blockTokenizers = options.blockTokenizers.slice()
+        self.inlineTokenizers = options.inlineTokenizers.slice()
 
         if (self.data) {
             self.data = extend(true, {}, self.data);
@@ -165,8 +167,8 @@ function unified(options) {
 
     function createParser (value, settings) {
       var file = new VFile(value);
-      var CustomParser = (this && this.Parser) || Parser;
-      return new CustomParser(file, settings, instance(this))
+      var customParserFactory = (this && this.parserFactory) || parserFactory;
+      return customParserFactory(file, settings, instance(this))
     }
 
     /**
@@ -248,8 +250,8 @@ function unified(options) {
     function process(value, settings) {
         var self = instance(this);
         var opts = {
-            'context': self,
-            'settings': settings || {}
+            context: self,
+            settings: settings || {}
         }
         if (typeof value === 'string' || value instanceof VFile) {
           opts.file = new VFile(value);
