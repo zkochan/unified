@@ -76,6 +76,7 @@ function unified(options) {
         self.Compiler = unherit(Compiler);
         self.blockTokenizers = options.blockTokenizers.slice()
         self.inlineTokenizers = options.inlineTokenizers.slice()
+        self.visitors = Object.assign({}, options.visitors)
 
         if (self.data) {
             self.data = extend(true, {}, self.data);
